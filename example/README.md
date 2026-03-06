@@ -11,10 +11,10 @@ mv dna-sequences.fasta movpic.fna
 rm rep-seqs.qza
 ```
 
-To compute a pairwise _p_-distance matrix, use the `calc_pdist.py` script under `utils/`:
+To compute a distance matrix, use the `calc_pdist.py` script under `utils/`:
 
 ```bash
-python calc_pdist.py movpic.fna movpic.phy
+python utils/calc_pdist.py movpic.fna movpic.phy
 ```
 
 ## References

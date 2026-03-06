@@ -1,0 +1,32 @@
+--- fastme.c	2026-01-17 10:05:08.882402861 -0700
++++ fastme-2.1.6.4/src/fastme.c	2026-01-17 10:36:01.121560780 -0700
+@@ -39,6 +39,9 @@
+ 
+ 	seq **sequences = NULL;
+ 
++	struct timespec c_beg, c_end;
++	double c_spent;
++
+ #ifdef _OPENMP
+ 	int i = 0;
+ #endif
+@@ -197,6 +200,7 @@
+ /*********************************************************
+ 		COMPUTE TREE
+ **********************************************************/
++		if (options->only_mat) exit(0);
+ 		if (numSpecies < 4)
+ 			Warning ( (char*)"Cannot compute tree with less than 4 taxa.");
+ 		if (! options->only_mat && numSpecies > 3)
+@@ -221,7 +225,11 @@
+ 			}
+ 			else
+ 			{
++				clock_gettime(CLOCK_MONOTONIC, &c_beg);
+ 				T = ComputeTree (options, D, A, species, numSpecies, options->precision);
++				clock_gettime(CLOCK_MONOTONIC, &c_end);
++				c_spent = (c_end.tv_sec - c_beg.tv_sec) + (c_end.tv_nsec - c_beg.tv_nsec) / 1e9;
++				printf("Elapsed\t%f\n", c_spent);
+ 			}
+ 
+ 			T = ImproveTree (options, T, D, A, &nniCount, &sprCount, options->fpO_stat_file);

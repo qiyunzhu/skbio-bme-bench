@@ -101,3 +101,43 @@ fastme -i input.dm -m B -w B -o output.nwk
 ```
 
 In which `-m B` refers to "TaxAdd_BalME" for tree topology reconstruction, `-w B` refers to "BalLS" for branch length estimation. The input file should be a Phylip-formatted matrix in square layout.
+
+
+## Benchmarks
+
+This section details how the benchmarks of the optimized BME algorithm were generated.
+
+
+### SILVA
+
+We generated test datasets of varying sizes by subsampling the SSU Ref NR 99 sequences of [SILVA](https://www.arb-silva.de/) release 138.2 (_n_ = 510,495),
+
+Download the sequences from the SILVA server and process them.
+
+```bash
+bash scripts/down_silva.sh
+bash scripts/parse_silva.sh
+```
+
+Subsample varying numbers of sequences from the complete SILVA sequence file. This will randomly sample 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000 and 200000 sequences. For each number, 5 replicates with different random seeds (0 to 4) are generated, with the exception of 200000, with which only 1 replicate is generated considering the large size of the subsequent distance matrix file. Additionally, a set of 1000 sequences is sampled with seed = 42 for program warm-up purpose.
+
+```bash
+mkdir -p aln
+bash scripts/sample_aln.sh
+bash scripts/sample_aln_200k.sh
+bash scripts/sample_aln_warm.sh
+```
+
+Compute distance matrices from subsampled sequences. Note that the distance matrix files can be huge (because they are _O_(_n_<sup>2</sup>)) when there are many sequences. The code already attempts to reduce file size (lower triangular layout, 5 decimal places, gzipping), but it could still be a consideration if your disk space is running low. For example, a file with 100k taxa takes about 12 GB.
+
+```bash
+mkdir -p dm
+bash scripts/calc_silva_dm.sh
+```
+
+
+
+
+### FastME
+
+Our implementation of the BME algorithm was compared with the original implementation in the FastME package.
