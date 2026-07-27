@@ -23,6 +23,7 @@ $fastme -T 4 -i warmup.phy -m B -w B -o warmup.nwk > /dev/null
 rm warmup.phy warmup.nwk warmup.phy_fastme_stat.txt
 
 # benchmark runs
+mkdir -p $outdir
 for sample in ${samples[@]}; do
   for seed in ${seeds[@]}; do
     python utils/phylip_sq.py $indir/$sample.$seed.phy.gz input.phy

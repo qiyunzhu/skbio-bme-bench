@@ -2,6 +2,8 @@
 
 Benchmarking the parallel balanced minimum evolution (BME) algorithm implemented in scikit-bio.
 
+The software code hosted in this repo is licensed under [BSD 3-Clause](LICENSE), except for a [patch](patch) for the FastME program, which is licensed under [GPL-3.0](patch/LICENSE).
+
 
 ## Installation
 
@@ -11,7 +13,7 @@ Have Python installed in your system. Execute the following command:
 pip install -I git+https://github.com/qiyunzhu/scikit-bio.git@parame
 ```
 
-This command installs a specific branch of the scikit-bio package that houses the optimized BME algorithm. It will eventually be merged into the upstream main branch. In install the standard release of scikit-bio, refer to this [guideline](https://scikit.bio/install.html).
+This command installs a specific branch of the scikit-bio package that houses the optimized BME algorithm. It was later merged into the upstream main branch, and shipped in [scikit-bio 0.7.3](https://github.com/scikit-bio/scikit-bio/releases/tag/0.7.3). To install the standard release of scikit-bio, refer to this [guideline](https://scikit.bio/install.html).
 
 We recommend that you experiment this in a sandbox environment, managed by e.g., `venv`, `uv` or `conda`.
 
@@ -119,25 +121,116 @@ bash scripts/down_silva.sh
 bash scripts/parse_silva.sh
 ```
 
-Subsample varying numbers of sequences from the complete SILVA sequence file. This will randomly sample 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000 and 200000 sequences. For each number, 5 replicates with different random seeds (0 to 4) are generated, with the exception of 200000, with which only 1 replicate is generated considering the large size of the subsequent distance matrix file. Additionally, a set of 1000 sequences is sampled with seed = 42 for program warm-up purpose.
+Subsample varying numbers of sequences from the complete SILVA sequence file. This will randomly sample 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10k, 20k, 50k, 100k and 200k sequences. For each number, 5 replicates with different random seeds (0 to 4) are generated, with the exception of 200k, with which only 1 replicate is generated considering the large size of the subsequent distance matrix file. Additionally, a set of 1000 sequences is sampled with seed = 42 for program warm-up purpose.
 
 ```bash
 mkdir -p aln
-bash scripts/sample_aln.sh
-bash scripts/sample_aln_200k.sh
-bash scripts/sample_aln_warm.sh
+bash scripts/sample_silva.sh
+bash scripts/sample_silva_200k.sh
+bash scripts/sample_silva_warm.sh
 ```
 
-Compute distance matrices from subsampled sequences. Note that the distance matrix files can be huge (because they are _O_(_n_<sup>2</sup>)) when there are many sequences. The code already attempts to reduce file size (lower triangular layout, 5 decimal places, gzipping), but it could still be a consideration if your disk space is running low. For example, a file with 100k taxa takes about 12 GB.
+The outputs are gzipped FASTA-formatted multiple sequence alignments under the `aln` directory.
+
+Compute distance matrices from subsampled sequences. The following commands use scikit-bio's built-in `align_dists` function for samples to 100k sequences, and uses a custom, parallel Cython program for the sample of 200k sequences, such that we don't need to wait for days. Follow the [instruction](utils/calc_pdist_cy) to compile the Cython code. If you want to further save time, you may use this Cython program to calculate distances for all samples.
 
 ```bash
 mkdir -p dm
-bash scripts/calc_silva_dm.sh
+bash scripts/pdist_silva.sh
+bash scripts/pdist_silva_200k.sh
+bash scripts/pdist_silva_warm.sh
 ```
 
+The outputs are gzipped Phylip-formatted distance matrices under the `dm` directory.
 
+Note that the distance matrix files can be huge when there are many sequences, because they are _O_(_n_<sup>2</sup>). The code already attempts to reduce file size (lower triangular layout, 5 decimal places, gzipping), but it could still be a consideration if your disk space is running low. For example, a file with 100k taxa takes about 12 GB.
 
 
 ### FastME
 
-Our implementation of the BME algorithm was compared with the original implementation in the FastME package.
+Our implementation of the BME algorithm was compared with the original implementation in the [FastME](https://gite.lirmm.fr/atgc/FastME/) package ([Lefort et al., _Mol Biol Evol_, 2015](https://academic.oup.com/mbe/article/32/10/2798/1212138)).
+
+Follow the [instruction](patch) to retrieve the FastME source code, patch it to enable additional reporting, and compile it in your machine.
+
+Benchmark the BME algorithm implemented in FastME. The algorithm will run five times on every sample under 50k, and three times on the 50k samples (to save time). Note that this program cannot parallelize.
+
+```bash
+mkdir -p fastme
+bash scripts/bench_fastme.sh
+bash scripts/bench_fastme_50k.sh
+```
+
+The FastME command run by these scripts is:
+
+```bash
+fastme -T 4 -i input.phy -m B -w B -o output.nwk
+```
+
+The outputs are Newick-formatted phylogenetics trees, and tabular summary of runtimes and memory consumptions, under the `fastme` directory.
+
+
+### scikit-bio
+
+For samples with 100k or more taxa, convert the distance matrices into a binary format to reduce loading time.
+
+```bash
+bash scripts/phylip_to_hdf5.sh
+```
+
+Benchmark the parallel BME algorithm implemented in scikit-bio.
+
+```bash
+mkdir -p skbio
+bash scripts/bench_skbio.sh
+bash scripts/bench_skbio_100k.sh
+bash scripts/bench_skbio_200k.sh
+```
+
+The outputs are similar to above, under the `skbio` directory.
+
+
+### Neighbor-joining (NJ)
+
+We compared the taxon-addition BME algorithm with neighbor-joining (NJ), which is essentially also a heuristic for the BME problem using agglomerative clustering. We chose the "NJ-R-D" algorithm in [DecentTree](https://github.com/iqtree/decenttree) ([Wang et al., _Bioinformatics_, 2023](https://academic.oup.com/bioinformatics/article/39/9/btad536/7257068)) for the test.
+
+Install DecentTree from Bioconda:
+
+```bash
+conda install bioconda::decenttree
+```
+
+Benchmark the NJ-R-D algorithm.
+
+```bash
+mkdir -p nj
+bash scripts/bench_nj.sh
+bash scripts/bench_nj_100k.sh
+```
+
+The outputs are similar to above, under the `nj` directory.
+
+
+### BME loss comparison
+
+We accessed the quality of output trees by caculating the balanced tree length -- the loss function of the balanced minimum evolution framework.
+
+```bash
+mkdir -p nj
+bash scripts/bme_loss.sh
+```
+
+The outputs are `fastme.loss`, `skbio.loss` and `nj.loss`.
+
+
+### Consistency test
+
+We compared the consistency between scikit-bio- and FastME-generated trees by testing 1000 random samples of 1000 or 10k sequences.
+
+```bash
+reps=1000
+for taxa in 1000 10000; do
+  bash scripts/consistency $taxa $reps
+done
+```
+
+The outputs are `1k.tsv`, `10k.tsv`.
