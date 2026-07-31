@@ -9,3 +9,5 @@
 `loss`: Loss function of output trees.
 
 `const`: Consistency between scikit-bio and FastME.
+
+`gtdb`: Tests on GTDB R232 bac120 dataset.

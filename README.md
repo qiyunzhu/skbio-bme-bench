@@ -105,6 +105,11 @@ fastme -i input.dm -m B -w B -o output.nwk
 In which `-m B` refers to "TaxAdd_BalME" for tree topology reconstruction, `-w B` refers to "BalLS" for branch length estimation. The input file should be a Phylip-formatted matrix in square layout.
 
 
+## Illustration
+
+Execute [`diagram.ipynb`](diagram.ipynb) for a walk-through of the BME algorithm using a dummy dataset.
+
+
 ## Benchmarks
 
 This section details how the benchmarks of the optimized BME algorithm were generated.
@@ -210,9 +215,9 @@ bash scripts/bench_nj_100k.sh
 The outputs are similar to above, under the `nj` directory.
 
 
-### BME loss comparison
+### BME loss calculation
 
-We accessed the quality of output trees by caculating the balanced tree length -- the loss function of the balanced minimum evolution framework.
+We accessed the quality of output trees by caculating the balanced tree length -- the loss function of the balanced minimum evolution framework. Smaller is better.
 
 ```bash
 mkdir -p nj
@@ -229,8 +234,50 @@ We compared the consistency between scikit-bio- and FastME-generated trees by te
 ```bash
 reps=1000
 for taxa in 1000 10000; do
-  bash scripts/consistency $taxa $reps
+  bash scripts/consistency.sh $taxa $reps
 done
 ```
 
 The outputs are `1k.tsv`, `10k.tsv`.
+
+
+## Case study
+
+### GTDB analysis
+
+We applied the tree-building methods to the [GTDB](https://gtdb.ecogenomic.org/) release RS232 bac120 dataset (_n_ = 189,801).
+
+Download the dataset and reference phylogeny from the GTDB server.
+
+```bash
+bash scripts/down_gtdb.sh
+```
+
+Generate a JC20 (like JC69 but for the 20 canonical amino acids) distance matrix using DecentTree.
+
+```bash
+bash scripts/jc20_gtdb.sh
+```
+
+Run scikit-bio's BME algorithm and DecentTree's NJ-R-D algorithm on this distance matrix.
+
+```bash
+bash scripts/run_gtdb_skbio.sh
+bash scripts/run_gtdb_nj.sh
+```
+
+The outputs are trees and benchmarks under `gtdb`.
+
+Evaluate the output trees. This will calculate:
+
+1. Normalized Robinson-Foulds distance from the reference tree, smaller is more congruent.
+2. BME loss (balanced tree length), smaller is better
+
+```bash
+bash scripts/evaluate_gtdb.sh
+```
+
+
+## Plotting
+
+Execute [`analysis.ipynb`](analysis.ipynb) to analyze raw results and generate plots.
