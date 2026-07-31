@@ -105,6 +105,11 @@ fastme -i input.dm -m B -w B -o output.nwk
 In which `-m B` refers to "TaxAdd_BalME" for tree topology reconstruction, `-w B` refers to "BalLS" for branch length estimation. The input file should be a Phylip-formatted matrix in square layout.
 
 
+## Illustration
+
+Execute [`diagram.ipynb`](diagram.ipynb) for a walk-through of the BME algorithm using a dummy dataset.
+
+
 ## Benchmarks
 
 This section details how the benchmarks of the optimized BME algorithm were generated.
@@ -212,7 +217,7 @@ The outputs are similar to above, under the `nj` directory.
 
 ### BME loss calculation
 
-We accessed the quality of output trees by caculating the balanced tree length -- the loss function of the balanced minimum evolution framework.
+We accessed the quality of output trees by caculating the balanced tree length -- the loss function of the balanced minimum evolution framework. Smaller is better.
 
 ```bash
 mkdir -p nj
@@ -236,9 +241,11 @@ done
 The outputs are `1k.tsv`, `10k.tsv`.
 
 
-## GTDB analysis
+## Case study
 
-We applied the tree-building methods to the GTDB RS232 bac120 dataset (_n_ = 189,801).
+### GTDB analysis
+
+We applied the tree-building methods to the [GTDB](https://gtdb.ecogenomic.org/) release RS232 bac120 dataset (_n_ = 189,801).
 
 Download the dataset and reference phylogeny from the GTDB server.
 
@@ -246,7 +253,7 @@ Download the dataset and reference phylogeny from the GTDB server.
 bash scripts/down_gtdb.sh
 ```
 
-Generate a JC20 (like JC69 but for the 20 canonical amino acid) distance matrix using DecentTree.
+Generate a JC20 (like JC69 but for the 20 canonical amino acids) distance matrix using DecentTree.
 
 ```bash
 bash scripts/jc20_gtdb.sh
@@ -269,3 +276,8 @@ Evaluate the output trees. This will calculate:
 ```bash
 bash scripts/evaluate_gtdb.sh
 ```
+
+
+## Plotting
+
+Execute [`analysis.ipynb`](analysis.ipynb) to analyze raw results and generate plots.
